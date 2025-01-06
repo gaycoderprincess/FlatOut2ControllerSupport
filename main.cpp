@@ -3,22 +3,8 @@
 #include "nya_commontimer.h"
 #include "nya_commonhooklib.h"
 
-enum eControllerInput {
-	INPUT_HANDBRAKE = 0,
-	INPUT_NITRO = 1,
-	INPUT_CAMERA = 3,
-	INPUT_LOOK_BEHIND = 4,
-	INPUT_RESET = 5,
-	INPUT_PLAYERLIST = 7,
-	INPUT_MENU_ACCEPT = 8,
-	INPUT_PAUSE = 9,
-	INPUT_ACCELERATE = 10,
-	INPUT_BRAKE = 11,
-	INPUT_STEER_LEFT = 12,
-	INPUT_STEER_RIGHT = 13,
-	INPUT_GEAR_DOWN = 18,
-	INPUT_GEAR_UP = 19,
-};
+#include "fo2.h"
+#include "../nya-common-fouc/fo2versioncheck.h"
 
 // helper functions
 // XInputGetState without statically linking, from imgui :3
@@ -46,8 +32,7 @@ DWORD XInputGetState_Dynamic(int dwUserIndex, XINPUT_STATE* pState) {
 XINPUT_STATE gPadLastState[XUSER_MAX_COUNT];
 XINPUT_STATE gPadState[XUSER_MAX_COUNT];
 
-auto EndSceneOrig = (HRESULT(__thiscall*)(void*))nullptr;
-HRESULT __fastcall EndSceneHook(void* a1) {
+void EndSceneHook() {
 	for (int i = 0; i < XUSER_MAX_COUNT; i++) {
 		gPadLastState[i] = gPadState[i];
 
@@ -60,7 +45,6 @@ HRESULT __fastcall EndSceneHook(void* a1) {
 			memset(&gPadState[i], 0, sizeof(gPadState[i]));
 		}
 	}
-	return EndSceneOrig(a1);
 }
 
 double fButtonRemapTimeout = false;
@@ -202,14 +186,11 @@ uint8_t __fastcall ControllerSupportIngameMenu(void* a1, void*, int key) {
 BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 	switch( fdwReason ) {
 		case DLL_PROCESS_ATTACH: {
-			if (NyaHookLib::GetEntryPoint() != 0x202638) {
-				MessageBoxA(nullptr, "Unsupported game version! Make sure you're using v1.2 (.exe size of 2990080 bytes)", "nya?!~", MB_ICONERROR);
-				exit(0);
-				return TRUE;
-			}
+			DoFlatOutVersionCheck(FO2Version::FO2_1_2);
 
-			EndSceneOrig = (HRESULT(__thiscall *)(void *))(*(uintptr_t*)0x67D5A4);
-			NyaHookLib::Patch(0x67D5A4, &EndSceneHook);
+			NyaFO2Hooks::PlaceD3DHooks();
+			NyaFO2Hooks::aEndSceneFuncs.push_back(EndSceneHook);
+
 			NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x5503F0, &MenuControllerSupportSetupASM);
 			sub_4AE5D0 = (void*(__stdcall*)(void*))(*(uintptr_t*)(0x4A725E + 1));
 			NyaHookLib::Patch(0x4A725E + 1, &ControllerSupportRemapDisable);
