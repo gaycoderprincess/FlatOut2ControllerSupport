@@ -12,7 +12,7 @@ Plugin to add full controller support to FlatOut 2's menus, including the pause 
 
 Building is done on an Arch Linux system with CLion and vcpkg being used for the build process. 
 
-Before you begin, clone [nya-common](https://github.com/gaycoderprincess/nya-common) to a folder next to this one, so it can be found.
+Before you begin, clone [nya-common](https://github.com/gaycoderprincess/nya-common) and [nya-common-fo2](https://github.com/gaycoderprincess/nya-common-fo2) to folders next to this one, so they can be found.
 
 Required packages: `mingw-w64-gcc`
 
